@@ -57,7 +57,7 @@ output_lines = []
 env = {}  # variable environment for the code
 current_line = 0  # index of the current line for stepping
 stepping_mode = False
-done_executing = False
+done_executing = True
 
 
 def interpret_code_all(lines):
@@ -174,19 +174,23 @@ def step_code(lines):
     """Execute just the current line, then advance."""
     global current_line, env, done_executing
     if done_executing:
+        current_line = 0  # Reset current line to the first line
         return
 
     if current_line < 0 or current_line >= len(lines):
         done_executing = True
+        current_line = 0  # Reset current line to the first line
         return
 
     new_line = interpret_line(lines, current_line, env)
     if new_line < 0:
         done_executing = True
+        current_line = 0  # Reset current line to the first line
     else:
         current_line = new_line
         if current_line >= len(lines):
             done_executing = True
+            current_line = 0  # Reset current line to the first line
 
 
 def handle_text_input(event):
@@ -306,11 +310,12 @@ def draw_editor():
         text_surf = FONT.render(line, True, BLACK)
 
         # If we're in stepping mode, highlight the "current_line" if it matches actual_i
-        if stepping_mode and (actual_i == current_line) and not done_executing:
+        if (stepping_mode and (actual_i == current_line) and not done_executing) or (done_executing and actual_i == 0):
             # Draw a highlight behind the line
             highlight_rect = pygame.Rect(EDITOR_X + 2, EDITOR_Y + i * line_height, EDITOR_WIDTH - 4, line_height)
             pygame.draw.rect(screen, YELLOW, highlight_rect)
 
+        # Render the line text
         screen.blit(text_surf, (EDITOR_X + 5, EDITOR_Y + i * line_height))
 
     # Draw the cursor
@@ -390,6 +395,8 @@ def main():
                         output_lines.clear()
                         done_executing = False
                     step_code(code_lines)
+                    if done_executing:
+                        current_line = 0  # Reset current line to the first line
 
             # Mouse wheel for scrolling the editor (optional)
             elif event.type == pygame.MOUSEWHEEL:
