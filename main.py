@@ -57,26 +57,41 @@ output_lines = []
 env = {}  # variable environment for the code
 current_line = 0  # index of the current line for stepping
 stepping_mode = False
+running_mode = False
 done_executing = True
 
 
 def interpret_code_all(lines):
     """Interpret all lines at once (reset environment and output)."""
-    global env, output_lines, done_executing
+    global env, output_lines, running_mode, done_executing, current_line
     env = {}
     output_lines = []
     done_executing = False
+    running_mode = True
+    current_line = 0
 
-    # We'll parse line by line
-    line_index = 0
-    while line_index < len(lines):
+    # Parse and execute each line with a delay
+    while current_line < len(lines):
         # Interpret one line
-        line_index = interpret_line(lines, line_index, env)
+        new_line = interpret_line(lines, current_line, env)
+
+        # Highlight the current line and refresh the display
+        draw_editor()
+        draw_output()
+        draw_buttons()
+        pygame.display.flip()
+        pygame.time.delay(500)  # 500 ms delay to highlight the line
+
         # If interpret_line returns -1, it means stop execution (like a parse error).
-        if line_index < 0:
+        if new_line < 0:
             break
 
+        current_line = new_line
+
+    # Mark execution as done
     done_executing = True
+    running_mode = False
+    current_line = 0
 
 
 def interpret_line(lines, line_index, env):
@@ -310,7 +325,7 @@ def draw_editor():
         text_surf = FONT.render(line, True, BLACK)
 
         # If we're in stepping mode, highlight the "current_line" if it matches actual_i
-        if (stepping_mode and (actual_i == current_line) and not done_executing) or (done_executing and actual_i == 0):
+        if (stepping_mode and (actual_i == current_line) and not done_executing) or (done_executing and actual_i == 0) or (running_mode and (actual_i == current_line)):
             # Draw a highlight behind the line
             highlight_rect = pygame.Rect(EDITOR_X + 2, EDITOR_Y + i * line_height, EDITOR_WIDTH - 4, line_height)
             pygame.draw.rect(screen, YELLOW, highlight_rect)
