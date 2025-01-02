@@ -258,6 +258,38 @@ def handle_text_input(event):
             cursor_pos[1] += 1
 
 
+def handle_mouse_click(mx, my):
+    """Move the cursor to the clicked position in the editor."""
+    global cursor_pos, scroll_offset
+
+    # Check if the click is within the editor area
+    if EDITOR_X <= mx <= EDITOR_X + EDITOR_WIDTH and EDITOR_Y <= my <= EDITOR_Y + EDITOR_HEIGHT:
+        line_height = FONT.get_height()
+
+        # Determine the line index based on the vertical position
+        clicked_line = (my - EDITOR_Y) // line_height + scroll_offset
+
+        # Clamp the clicked line to valid range
+        clicked_line = max(0, min(len(code_lines) - 1, clicked_line))
+
+        # Determine the column index based on the horizontal position
+        text_x_offset = mx - EDITOR_X - 5  # Subtract padding
+        if text_x_offset < 0:
+            text_x_offset = 0
+
+        # Find the column index based on the width of the text
+        line_text = code_lines[clicked_line]
+        col_idx = 0
+        for i in range(len(line_text)):
+            char_width = FONT.size(line_text[:i + 1])[0]
+            if char_width > text_x_offset:
+                break
+            col_idx = i + 1  # The cursor should be at this column
+
+        # Update the cursor position
+        cursor_pos = [clicked_line, col_idx]
+
+
 def draw_editor():
     """Draw the code editor area with the lines of code and the cursor."""
     pygame.draw.rect(screen, WHITE, (EDITOR_X, EDITOR_Y, EDITOR_WIDTH, EDITOR_HEIGHT))
@@ -337,6 +369,8 @@ def main():
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
+                handle_mouse_click(mx, my)
+
                 # Check if clicked Run button
                 if (RUN_BUTTON_X <= mx <= RUN_BUTTON_X + BUTTON_WIDTH and
                         RUN_BUTTON_Y <= my <= RUN_BUTTON_Y + BUTTON_HEIGHT):
